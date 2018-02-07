@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Random GIF</title>
+    <link type="text/css" href="../public/css/flatly-bootstrap.min.css" rel="stylesheet" />
+    <link type="text/css" href="../public/css/bootstrap-responsive.min.css" rel="stylesheet"/>
+</head>
+
+<body class="container">
+    <div class="row">
+        <h1>Random GIF by author Khai Tran Quang</h1>
+        <p>Demo using giphy API</p>
+    </div>
+
+    <div class="row">
+        <form method="get">
+            <img class="img-responsive" width="600px" height="400px" src="{{url}}" alt="This is a gif"> <br>
+
+            <input type="button" value="Change GIF" onClick="window.location.reload()">
+        </form>
+    </div>
+</body>
+</html>
