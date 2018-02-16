@@ -9,6 +9,9 @@
   "dependencies": {
     "body-parser": "^1.15.2",
     "express": "^4.14.0",
+    "jade": "^1.11.0",
+    "less-middleware": "^2.2.1",
+    "moment": "^2.20.1",
     "mongodb": "^2.2.33"
   },
   "author": "Tran Quang Khai",

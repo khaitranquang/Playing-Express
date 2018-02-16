@@ -3,31 +3,45 @@
  * GET users listing
  */
 
+var MongoClient = require('mongodb').MongoClient;
+
 exports.list = function (req, res, next) {
-    req.db.tasks.find({completed: false}).toArray(function (error, tasks) {
-        if (error) return next(error);
-        res.render('tasks', {
-            title: 'Todo List',
-            tasks: tasks || []
-        });
-    });
+    MongoClient.connect(
+        'mongodb://127.0.0.1:27017/todolist',
+        function (err, connection) {
+            var collection = connection.collection('tasks');
+            collection.find({completed:false}).toArray(function (mongoError, document) {
+                if (mongoError) return next(mongoError);
+                res.render('tasks', {
+                    title: 'Todo List',
+                    tasks: document || []
+                });
+            });
+        }
+    )
 };
 
 exports.add = function (req, res, next) {
-    // Adding new task requires us to check for the name parameter
-    if (!req.body || !req.body.name) return next(new Error('No data provide.'));
-    req.db.tasks.save({
-        name: req.body.name,
-        createTime: new Date(),
-        completed: false
-    }, function (error, task) {
-        if (error) return next(error);
-        if (!task) return next(new Error('Failed to save.'));
-        console.info('Added %s with id=%s', task.name, task._id);
-        // We redirect back to the Todo List
-        // page when the saving operation has finished successfully
-        res.redirect('/tasks');
-    });
+    if (!req.body || !req.body.name) return next(new Error('No data provide'));
+    MongoClient.connect(
+        'mongodb://127.0.0.1:27017/todolist',
+        function (err, connection) {
+            var collection = connection.collection('tasks');
+            collection.insert(
+                {
+                    'name': req.body.name,
+                    'createTime': new Date(),
+                    'completed': false
+                },
+                function (error, document) {
+                    if (error) return next(error);
+                    if (!document) return next(new Error('Failed to save.'));
+                    console.log('Insert successfully');
+                    res.redirect('/tasks');
+                }
+            )
+        }
+    )
 };
 
 /*
@@ -38,57 +52,102 @@ exports.markAllCompleted = function (req, res, next) {
     // illustration of flow control, we check for the all_done parameter
     // decide if this request comes from the 'all_done' button or the 'add' button
     if (!req.body.all_done || req.body.all_done !== 'true') return next();
-    req.db.tasks.update(
-        {
-            completed: false
-        },
-        {
-            $set: {
-                completeTime: new Date(),
-                completed: true
-            }
-        },
-        {
-            multi: true
-        },
-        function (error, count) {
-            if (error) return next(error);
-            console.info('Marked %s task(s) completed.', count);
-            res.redirect('/tasks');
+
+    MongoClient.connect(
+        'mongodb://127.0.0.1:27017/todolist',
+        function (err, connection) {
+            var collection = connection.collection('tasks');
+            collection.update(
+                {
+                    completed: false
+                },
+                {
+                    $set: {
+                        completeTime: new Date(),
+                        completed: true
+                    }
+                },
+                {
+                    multi: true
+                },
+                function (error, count) {
+                    if (error) return next(error);
+                    console.info('Marked %s task(s) completed.', count);
+                    res.redirect('/tasks');
+                }
+            );
         }
-    );
+    )
 };
 
 exports.completed = function (req, res, next) {
-    req.db.tasks.find({completed: true}).toArray(function (error, tasks) {
-        res.render('tasks_completed', {
-            title: 'Completed',
-            tasks: tasks || []
-        });
-    });
+    MongoClient.connect(
+        'mongodb://127.0.0.1:27017/todolist',
+        function (err, connection) {
+            if (err) {
+                console.log('Cant connect to database');
+                return;
+            }
+            var collection = connection.collection('tasks');
+            collection.find({completed:true}).toArray(function (mongoError, document) {
+                if (mongoError) return next(mongoError);
+                res.render('tasks_completed', {
+                    title: 'Completed',
+                    tasks: document || []
+                });
+            });
+        }
+    )
 };
 
 exports.markCompleted = function (req, res, next) {
     if (!req.body.completed) return next(new Error('Param is missing'));
+
     var completed = req.body.completed === 'true';
 
-    req.db.tasks.updateById(
-        req.task._id,
-        {$set: {completeTime: completed ? new Date(): null, completed: completed}},
-        function (error, count) {
-            if (error) return next(error);
-            if (count !== 1) return next(new Error('Something went wrong.'));
-            console.info('Marked task %s with id=%s completed.', req.task.name, req.task._id);
-            res.redirect('/tasks');
+    MongoClient.connect(
+        'mongodb://127.0.0.1:27017/todolist',
+        function (err, connection) {
+            if (err) {
+                console.log('Cant connect to database');
+                return;
+            }
+            var collection = connection.collection('tasks');
+            var id = req.body.id.toString();
+            console.log(id);
+
+            var ObjectID = require('mongodb').ObjectID;
+
+            collection.updateOne(
+                {'_id': ObjectID(id)},
+                {$set: {completeTime: completed ? new Date(): null, completed: completed}},
+                function (error, count) {
+                    if (error) return next(error);
+                    res.redirect('/tasks');
+                }
+            );
         }
     );
 };
 
 exports.del = function (req, res, next) {
-    req.db.tasks.removeById(req.task._id, function (error, count) {
-        if (error) return next(error);
-        if (count != 1) return next(new Error('Something went wrong.'));
-        console.info('Deleted task %s with id=%s completed.', req.task.name, req.task._id);
-        res.status(204).send();
-    });
+    MongoClient.connect(
+        'mongodb://127.0.0.1:27017/todolist',
+        function (err, connection) {
+            if (err) {
+                console.log('Cant connect to database');
+                return;
+            }
+            var collection = connection.collection('tasks');
+            var ObjectID = require('mongodb').ObjectID;
+            collection.removeOne(
+                {'_id': ObjectID(req.body.id)},
+                function (error, result) {
+                    if (error) return next(error);
+                    console.log('Delete successfully');
+                    res.status(204).send();
+                }
+            );
+        }
+    )
 };
