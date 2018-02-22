@@ -1,0 +1,18 @@
+{
+  "name": "demo-rest-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "expect.js": "^0.3.1",
+    "express": "^4.16.2",
+    "mongoskin": "^2.1.0",
+    "superagent": "^3.8.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Tran Quang Khai",
+  "license": "ISC"
+}
